@@ -1,65 +1,231 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+import ChatMessage from "@/components/ChatMessage";
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  responseTime?: number;
+};
 
 export default function Home() {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // File upload states
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  // Response time
+  const [lastResponseTime, setLastResponseTime] =
+    useState<number | null>(null);
+
+  async function sendMessage() {
+    if (!message.trim()) return;
+
+    const userMessage: Message = {
+      role: "user",
+      content: message,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    const currentMessage = message;
+
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const startTime = performance.now();
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: currentMessage,
+        }),
+      });
+
+      const data = await res.json();
+
+      const endTime = performance.now();
+
+      const timeTaken = Number(
+        ((endTime - startTime) / 1000).toFixed(2)
+      );
+
+      setLastResponseTime(timeTaken);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.reply || "No response received.",
+          responseTime: timeTaken,
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Something went wrong.",
+        },
+      ]);
+    }
+
+    setLoading(false);
+  }
+
+  async function uploadFile() {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUploadStatus(
+          `Uploaded: ${data.filename}
+
+${data.text?.substring(0, 1000) }`
+        );
+      } else {
+        setUploadStatus("Upload failed");
+      }
+    } catch (error) {
+      console.error(error);
+      setUploadStatus("Upload failed");
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="h-screen flex bg-gray-100">
+      <Sidebar />
+
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b p-4">
+          <h2 className="font-semibold text-lg">
+            Attentio-AI Student Support Assistant
+          </h2>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center mt-24">
+              <h1 className="text-4xl font-bold mb-4">
+                Welcome to Attentio-AI
+              </h1>
+
+              <p className="text-gray-500">
+                Ask questions about focus,
+                concentration, productivity,
+                study habits, and learning.
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg, index) => (
+            <div key={index}>
+              <ChatMessage
+                role={msg.role}
+                content={msg.content}
+              />
+
+              {msg.role === "assistant" &&
+                msg.responseTime !== undefined && (
+                  <div className="text-xs text-gray-500 mt-1 ml-2">
+                    ⚡ Response time: {msg.responseTime} seconds
+                  </div>
+                )}
+            </div>
+          ))}
+
+          {loading && (
+            <ChatMessage
+              role="assistant"
+              content="Thinking..."
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          )}
         </div>
-      </main>
-    </div>
+
+        {/* Upload Section */}
+        <div className="px-4 pt-4 bg-white border-t">
+          <input
+            type="file"
+            accept=".pdf,.txt,.docx"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                setFile(e.target.files[0]);
+              }
+            }}
+          />
+
+          {file && (
+            <p className="mt-2 text-sm text-gray-600">
+              📄 Selected: {file.name}
+            </p>
+          )}
+
+          <button
+            onClick={uploadFile}
+            className="bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700"
+          >
+            Upload Document
+          </button>
+
+          {uploadStatus && (
+            <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+              {uploadStatus}
+            </p>
+          )}
+        </div>
+
+        {/* Latest Response Time */}
+        {lastResponseTime !== null && (
+          <div className="bg-white text-center text-sm text-gray-600 py-2 border-t">
+            ⚡ Last response generated in{" "}
+            <strong>{lastResponseTime}</strong> seconds
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="border-t bg-white p-4">
+          <div className="flex gap-2">
+            <textarea
+              value={message}
+              onChange={(e) =>
+                setMessage(e.target.value)
+              }
+              placeholder="Ask your question..."
+              rows={2}
+              className="flex-1 border rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              onClick={sendMessage}
+              disabled={loading}
+              className="bg-black text-white px-6 rounded-xl hover:bg-gray-800 disabled:opacity-50"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
