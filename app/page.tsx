@@ -48,6 +48,10 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: currentMessage,
+          history: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
         }),
       });
 

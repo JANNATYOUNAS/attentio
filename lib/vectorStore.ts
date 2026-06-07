@@ -18,6 +18,8 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 export function saveVectors(entries: VectorEntry[]): void {
+  const uploadDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
   const existing = loadAllVectors();
   const merged = [...existing, ...entries];
   fs.writeFileSync(STORE_PATH, JSON.stringify(merged, null, 2));
