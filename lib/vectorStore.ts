@@ -25,6 +25,13 @@ export function saveVectors(entries: VectorEntry[]): void {
   fs.writeFileSync(STORE_PATH, JSON.stringify(merged, null, 2));
 }
 
+// Overwrites the entire store (used for deletions)
+export function saveVectorsRaw(entries: VectorEntry[]): void {
+  const uploadDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  fs.writeFileSync(STORE_PATH, JSON.stringify(entries, null, 2));
+}
+
 export function loadAllVectors(): VectorEntry[] {
   if (!fs.existsSync(STORE_PATH)) return [];
   return JSON.parse(fs.readFileSync(STORE_PATH, "utf-8"));
