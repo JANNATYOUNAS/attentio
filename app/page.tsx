@@ -98,10 +98,9 @@ export default function Home() {
 
       if (data.success) {
         setUploadStatus(
-          `Uploaded: ${data.filename}
+          `Uploaded: ${data.filename}(${data.chunks} chunks indexed)`);
 
-${data.text?.substring(0, 1000) }`
-        );
+
       } else {
         setUploadStatus("Upload failed");
       }
