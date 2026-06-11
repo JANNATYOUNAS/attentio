@@ -31,12 +31,15 @@ export async function POST(req: Request) {
     // 4. Send to Groq with RAG context + full history
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
+      max_tokens: 512,
       messages: [
         {
           role: "system",
           content: `You are Attentio-AI, a student support assistant.
 Answer questions using the provided document context when relevant.
 If the context doesn't help, answer from your general knowledge.
+Keep answers concise and to the point — 3 to 5 sentences unless the question requires more detail.
+Use markdown formatting for headings and lists when helpful.
 
 DOCUMENT CONTEXT:
 ${context}`,

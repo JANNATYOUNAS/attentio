@@ -59,3 +59,14 @@ export async function DELETE(req: Request) {
   saveSessions(sessions);
   return NextResponse.json({ success: true });
 }
+
+export async function PATCH(req: Request) {
+  const { id, title } = await req.json();
+  const sessions = loadSessions();
+  const index = sessions.findIndex((s) => s.id === id);
+  if (index !== -1) {
+    sessions[index].title = title;
+    saveSessions(sessions);
+  }
+  return NextResponse.json({ success: true });
+}
