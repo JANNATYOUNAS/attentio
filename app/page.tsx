@@ -9,6 +9,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   responseTime?: number;
+  source?: string;
 };
 
 function generateId() {
@@ -91,6 +92,7 @@ export default function Home() {
           role: "assistant",
           content: data.reply || "No response received.",
           responseTime: timeTaken,
+          source: data.source,
         },
       ]);
     } catch (err) {
@@ -172,10 +174,18 @@ export default function Home() {
             messages.map((msg, index) => (
               <div key={index}>
                 <ChatMessage role={msg.role} content={msg.content} />
+                {/* ✅ updated — shows response time + source */}
                 {msg.role === "assistant" && msg.responseTime !== undefined && (
-                  <p className="text-xs text-gray-400 mt-1.5 ml-10">
-                    Response time: {msg.responseTime}s
-                  </p>
+                  <div className="ml-10 mt-1.5 space-y-0.5">
+                    <p className="text-xs text-gray-400">
+                      Response time: {msg.responseTime}s
+                    </p>
+                    {msg.source && msg.source !== "general" && (
+                      <p className="text-xs text-indigo-400">
+                        Source: {msg.source === "web search" ? "Web search" : "Uploaded documents"}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             ))
@@ -214,7 +224,6 @@ export default function Home() {
 
           {/* Input row */}
           <div className="flex items-end gap-2">
-            {/* Plus button */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 flex-shrink-0 transition-colors"
@@ -235,7 +244,6 @@ export default function Home() {
               }}
             />
 
-            {/* Textarea */}
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -245,7 +253,6 @@ export default function Home() {
               className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
 
-            {/* Send button */}
             <button
               onClick={sendMessage}
               disabled={loading || !message.trim()}

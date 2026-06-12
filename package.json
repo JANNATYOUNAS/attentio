@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.18",
+    "@tavily/core": "^0.7.6",
     "formidable": "^3.5.4",
     "groq-sdk": "^1.2.1",
     "lucide-react": "^1.17.0",
