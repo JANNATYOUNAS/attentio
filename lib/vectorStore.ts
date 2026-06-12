@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+type ScoredEntry = VectorEntry & { score: number };
 
 export type VectorEntry = {
   id: string;
@@ -40,7 +41,7 @@ export function loadAllVectors(): VectorEntry[] {
 export function similaritySearch(
   queryEmbedding: number[],
   topK: number = 5
-): VectorEntry[] {
+): ScoredEntry[] {
   const all = loadAllVectors();
 
   return all
